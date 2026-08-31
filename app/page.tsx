@@ -10,6 +10,7 @@ import {
   Gauge,
   LayoutDashboard,
   Layers3,
+  Menu,
   Phone,
   Plus,
   Search,
@@ -118,6 +119,7 @@ export default function Home() {
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [search, setSearch] = useState("");
+  const [mobileMenu, setMobileMenu] = useState(false);
   useEffect(() => {
     fetch("/api/data")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
@@ -180,7 +182,7 @@ export default function Home() {
   const closeRate = calls.length ? (sales.length / calls.length) * 100 : 0;
   const nav = (label: string, icon: React.ReactNode, badge?: number) => (
     <button
-      onClick={() => setView(label)}
+      onClick={() => {setView(label);setMobileMenu(false)}}
       className={view === label ? "active" : ""}
     >
       {icon}
@@ -207,13 +209,15 @@ export default function Home() {
   if (!campaign) return <CountdownSetup create={createCampaign} />;
   return (
     <main className="app-shell">
-      <aside className="sidebar">
+      {mobileMenu?<button className="mobile-menu-backdrop" aria-label="Fechar menu" onClick={()=>setMobileMenu(false)}/>:null}
+      <aside className={`sidebar ${mobileMenu?"mobile-open":""}`}>
         <div className="brand">
           <span className="brand-mark">K</span>
           <span>
             KRONOS <small>OPERAÇÃO 100K</small>
           </span>
         </div>
+        <button className="mobile-menu-close" onClick={()=>setMobileMenu(false)} aria-label="Fechar menu"><X/></button>
         <nav>
           <p>VISÃO</p>
           {nav("Visão geral", <LayoutDashboard />)}
@@ -524,6 +528,10 @@ export default function Home() {
         <button onClick={() => setView("Leads")}>
           <Users />
           Leads
+        </button>
+        <button onClick={() => setMobileMenu(true)}>
+          <Menu />
+          Menu
         </button>
       </div>
     </main>
