@@ -263,6 +263,7 @@ export default function Home() {
               <Plus /> Registrar venda
             </button>
           </div>
+          <button className="top-mobile-menu" onClick={()=>setMobileMenu(true)} aria-label="Abrir menu"><Menu/></button>
         </header>
         {view === "Visão geral" || view === "Hoje" ? (
           <>
@@ -512,28 +513,6 @@ export default function Home() {
           }}
         />
       ) : null}
-      <div className="mobile-bar">
-        <button onClick={() => setView("Hoje")}>
-          <Gauge />
-          Hoje
-        </button>
-        <button onClick={() => setModal("call")}>
-          <Phone />
-          Ligação
-        </button>
-        <button onClick={() => setModal("sale")}>
-          <CircleDollarSign />
-          Venda
-        </button>
-        <button onClick={() => setView("Leads")}>
-          <Users />
-          Leads
-        </button>
-        <button onClick={() => setMobileMenu(true)}>
-          <Menu />
-          Menu
-        </button>
-      </div>
     </main>
   );
 }
