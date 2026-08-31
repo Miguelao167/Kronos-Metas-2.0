@@ -9,6 +9,7 @@ import {
   ClipboardList,
   Gauge,
   LayoutDashboard,
+  Layers3,
   Phone,
   Plus,
   Search,
@@ -74,6 +75,7 @@ type Campaign = {
   startDate: string;
   totalDays: number;
   target: number;
+  active?: number | boolean;
 };
 const money = (v: number) =>
   v.toLocaleString("pt-BR", {
@@ -217,6 +219,7 @@ export default function Home() {
           {nav("Visão geral", <LayoutDashboard />)}
           {nav("Hoje", <Gauge />)}
           {nav("O que fazer", <ClipboardList />)}
+          {nav("Contagens", <Layers3 />)}
           <p>EXECUÇÃO</p>
           {nav("Ligações", <Phone />)}
           {nav("Leads", <Users />)}
@@ -417,6 +420,8 @@ export default function Home() {
           </>
         ) : view === "O que fazer" ? (
           <TodoPlan campaign={campaign} calls={calls} sales={sales} />
+        ) : view === "Contagens" ? (
+          <CampaignManager current={campaign} />
         ) : view === "Ligações" ? (
           <CallTable
             calls={calls}
@@ -731,6 +736,16 @@ function Performance({ calls, sales }: { calls: Call[]; sales: Sale[] }) {
     </section>
   );
 }
+function CampaignManager({current}:{current:Campaign}){
+  const [items,setItems]=useState<Campaign[]>([]),[creating,setCreating]=useState(false),[title,setTitle]=useState("Nova contagem"),[days,setDays]=useState(30),[target,setTarget]=useState(100000),[busy,setBusy]=useState(false);
+  const load=()=>fetch('/api/data').then(r=>r.json()).then(d=>setItems(d.campaigns||[]));
+  useEffect(()=>{load().catch(()=>{})},[]);
+  const create=async(e:React.FormEvent)=>{e.preventDefault();setBusy(true);const item={id:Date.now(),title,startDate:new Date().toISOString().slice(0,10),totalDays:days,target,active:false};const r=await fetch('/api/data',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({kind:'campaign',item})});setBusy(false);if(!r.ok)return window.alert('Não foi possível criar a contagem.');setCreating(false);await load()};
+  const activate=async(id:number)=>{const r=await fetch('/api/data',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({kind:'activateCampaign',item:{id}})});if(r.ok)window.location.reload()};
+  const remove=async(item:Campaign)=>{if(!window.confirm(`Excluir a contagem “${item.title}”?`))return;const r=await fetch(`/api/data?kind=campaign&id=${item.id}`,{method:'DELETE'});if(!r.ok)return window.alert('Não foi possível excluir a contagem.');if(item.id===current.id)window.location.reload();else await load()};
+  return <section className="campaign-page"><div className="campaign-heading"><div><span className="eyebrow">GERENCIAMENTO</span><h2>Suas contagens</h2><p>Crie outros ciclos sem interromper a contagem que está ativa.</p></div><button className="primary standalone" onClick={()=>setCreating(true)}><Plus/> Nova contagem</button></div><div className="campaign-list">{items.map(item=>{const isActive=Boolean(item.active);const elapsed=Math.max(1,Math.min(item.totalDays,Math.floor((Date.now()-new Date(`${item.startDate}T00:00:00`).getTime())/86400000)+1));return <article className={`campaign-item ${isActive?'active':''}`} key={item.id}><div className="campaign-status">{isActive?'ATIVA':'SECUNDÁRIA'}</div><div className="campaign-main"><h3>{item.title}</h3><span>Dia {elapsed} de {item.totalDays} · início {new Date(`${item.startDate}T12:00:00`).toLocaleDateString('pt-BR')}</span></div><div className="campaign-target"><small>META</small><b>{money(item.target)}</b></div><div className="campaign-actions">{!isActive?<button onClick={()=>activate(item.id)}>Tornar ativa</button>:<span>Em andamento</span>}<button className="campaign-delete" onClick={()=>remove(item)}><Trash2/> Excluir</button></div></article>})}</div>{creating?<div className="modal-backdrop" onMouseDown={e=>e.target===e.currentTarget&&setCreating(false)}><form className="modal" onSubmit={create}><div className="modal-title"><div><span className="eyebrow">CONTAGEM SECUNDÁRIA</span><h2>Criar nova contagem</h2></div><button type="button" onClick={()=>setCreating(false)}><X/></button></div><label>Nome<input value={title} onChange={e=>setTitle(e.target.value)} required/></label><label>Duração em dias<input type="number" min="1" max="365" value={days} onChange={e=>setDays(+e.target.value)} required/></label><label>Meta de faturamento<input type="number" min="1" value={target} onChange={e=>setTarget(+e.target.value)} required/></label><p className="secondary-note">Ela será criada como secundária. Sua contagem atual continuará ativa.</p><button className="submit" disabled={busy}>{busy?'Criando...':'Criar contagem secundária'}</button></form></div>:null}</section>
+}
+
 function TodoPlan({campaign,calls,sales}:{campaign:Campaign;calls:Call[];sales:Sale[]}) {
   const plan=buildAIPlan(campaign.target,campaign.totalDays);
   const callsLeft=Math.max(0,plan.prospects-calls.length);
