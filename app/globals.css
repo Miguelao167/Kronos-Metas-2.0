@@ -939,3 +939,61 @@ th {
   }
 }
 
+/* Operational plan: kept at the end so its layout always wins the cascade. */
+.todo-page {
+  display: grid;
+  gap: 18px;
+  padding-bottom: 32px;
+}
+.todo-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 32px;
+  align-items: center;
+  padding: 28px 30px;
+  border: 1px solid #2b342e;
+  border-radius: 12px;
+  background: linear-gradient(120deg, #141a16, #101311 70%);
+}
+.todo-hero h2 { margin: 10px 0 7px; font-size: 25px; font-weight: 650; }
+.todo-hero p { margin: 0; color: #879088; font-size: 12px; }
+.todo-progress { padding-left: 28px; border-left: 1px solid #2a302c; }
+.todo-progress small, .todo-summary small { display: block; color: #727c74; font-size: 8px; letter-spacing: .14em; }
+.todo-progress b { display: block; margin: 8px 0 3px; font: 28px var(--font-mono); }
+.todo-progress span { color: var(--green); font-size: 10px; }
+.todo-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.todo-summary article { min-height: 116px; padding: 20px; border: 1px solid #272d29; border-radius: 10px; background: #121513; }
+.todo-summary b { display: block; margin: 12px 0 5px; font: 25px var(--font-mono); }
+.todo-summary span { display: block; color: #7d867f; font-size: 9px; line-height: 1.45; }
+.todo-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+.todo-card { padding: 25px; border: 1px solid #272d29; border-radius: 11px; background: #121513; }
+.todo-card-head { display: flex; justify-content: space-between; align-items: end; gap: 15px; margin-bottom: 4px; padding-bottom: 18px; border-bottom: 1px solid #272d29; }
+.todo-card-head h3 { margin: 6px 0 0; font-size: 17px; font-weight: 600; }
+.todo-card-head > span { color: #6e7870; font-size: 8px; }
+.product-task { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 13px; align-items: center; min-height: 82px; border-bottom: 1px solid #222723; }
+.task-check { display: grid; width: 27px; height: 27px; place-items: center; border: 1px solid #3a443d; border-radius: 7px; color: #9ba49d; font: 10px var(--font-mono); }
+.task-check.done { border-color: #34734d; background: #15271b; color: var(--green); }
+.product-task b, .product-task small { display: block; }
+.product-task b { margin-bottom: 4px; font-size: 11px; }
+.product-task small { margin-bottom: 9px; color: #79827b; font-size: 8px; }
+.product-task strong { white-space: nowrap; color: #edf1ee; font: 13px var(--font-mono); }
+.task-bar { height: 4px; overflow: hidden; border-radius: 3px; background: #262c28; }
+.task-bar i { display: block; height: 100%; border-radius: inherit; background: var(--green); }
+.call-task { display: grid; grid-template-columns: minmax(130px, 1.2fr) minmax(90px, 1fr) 64px; gap: 13px; align-items: center; min-height: 39px; color: #a8b0aa; font-size: 9px; }
+.call-task b { text-align: right; color: #828c84; font: 9px var(--font-mono); }
+.todo-footnote { margin: 0; padding: 0 4px; color: #626b64; font-size: 8px; line-height: 1.5; }
+@media (max-width: 1050px) {
+  .todo-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .todo-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 620px) {
+  .todo-hero { grid-template-columns: 1fr; gap: 20px; padding: 22px 18px; }
+  .todo-progress { padding: 18px 0 0; border-top: 1px solid #2a302c; border-left: 0; }
+  .todo-summary { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .todo-summary article, .todo-card { padding: 16px; }
+  .todo-summary b { font-size: 19px; }
+  .product-task { grid-template-columns: 27px minmax(0, 1fr); }
+  .product-task strong { grid-column: 2; }
+  .call-task { grid-template-columns: minmax(105px, 1fr) minmax(60px, .8fr) 54px; }
+}
+
