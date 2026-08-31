@@ -981,6 +981,9 @@ th {
 .task-bar i { display: block; height: 100%; border-radius: inherit; background: var(--green); }
 .call-task { display: grid; grid-template-columns: minmax(130px, 1.2fr) minmax(90px, 1fr) 64px; gap: 13px; align-items: center; min-height: 39px; color: #a8b0aa; font-size: 9px; }
 .call-task b { text-align: right; color: #828c84; font: 9px var(--font-mono); }
+.niche-offer { min-width: 0; }
+.niche-offer span { display: block; overflow: hidden; color: #cbd2cd; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.niche-offer em { display: block; margin-top: 3px; color: var(--green); font-size: 8px; font-style: normal; white-space: nowrap; }
 .todo-footnote { margin: 0; padding: 0 4px; color: #626b64; font-size: 8px; line-height: 1.5; }
 @media (max-width: 1050px) {
   .todo-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
