@@ -32,6 +32,19 @@ const initialNiches = [
   ["Academias", 4],
   ["Outros negócios", 5],
 ] as const;
+const nicheOffer:Record<string,{category:string;price:number}>={
+  "Clínicas e dentistas":{category:"Site Premium",price:6000},
+  "Advogados e contadores":{category:"Site Profissional",price:3000},
+  "Construção e engenharia":{category:"Site Premium",price:6000},
+  "Imobiliárias":{category:"Site Premium",price:6000},
+  "Energia solar":{category:"Projeto High Ticket",price:10000},
+  "Transportes e logística":{category:"Site Profissional",price:3000},
+  "Automotivo":{category:"Site Profissional",price:3000},
+  "Beleza e estética":{category:"Site Express",price:1000},
+  "Restaurantes":{category:"Site Express",price:1000},
+  "Academias":{category:"Site Profissional",price:3000},
+  "Outros negócios":{category:"Site Express",price:1000},
+};
 type Call = {
   id: number;
   company: string;
@@ -739,7 +752,7 @@ function TodoPlan({campaign,calls,sales}:{campaign:Campaign;calls:Call[];sales:S
     </div>
     <div className="todo-grid">
       <section className="todo-card"><div className="todo-card-head"><div><span className="eyebrow">VENDAS NECESSÁRIAS</span><h3>Sites por categoria</h3></div><span>Preço unitário</span></div>{plan.mix.map(([name,price,total])=>{const done=completedByType(name),left=Math.max(0,total-done);return <div className="product-task" key={name}><div className={left===0?'task-check done':'task-check'}>{left===0?'✓':done}</div><div><b>{name}</b><small>{done} vendidos · {left} restantes de {total}</small><div className="task-bar"><i style={{width:`${Math.min(100,done/total*100)}%`}}/></div></div><strong>{money(price)}</strong></div>})}</section>
-      <section className="todo-card"><div className="todo-card-head"><div><span className="eyebrow">PROSPECÇÃO</span><h3>Ligações por nicho</h3></div><span>{callsLeft.toLocaleString('pt-BR')} restantes</span></div>{initialNiches.map(([name,weight])=>{const target=Math.ceil(plan.prospects*weight/80),done=calls.filter(c=>c.niche===name).length;return <div className="call-task" key={name}><span>{name}</span><div className="task-bar"><i style={{width:`${Math.min(100,done/target*100)}%`}}/></div><b>{done} / {target}</b></div>})}</section>
+      <section className="todo-card"><div className="todo-card-head"><div><span className="eyebrow">PROSPECÇÃO</span><h3>Ligações por nicho</h3></div><span>{callsLeft.toLocaleString('pt-BR')} restantes</span></div>{initialNiches.map(([name,weight])=>{const target=Math.ceil(plan.prospects*weight/80),done=calls.filter(c=>c.niche===name).length,offer=nicheOffer[name];return <div className="call-task" key={name}><div className="niche-offer"><span>{name}</span><em>{offer.category} · {money(offer.price)}</em></div><div className="task-bar"><i style={{width:`${Math.min(100,done/target*100)}%`}}/></div><b>{done} / {target}</b></div>})}</section>
     </div>
     <p className="todo-footnote">O plano usa conversão estimada de 1,2% e ticket médio de R$ 3.000. Os números concluídos são atualizados pelos registros de ligações e vendas.</p>
   </section>
