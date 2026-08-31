@@ -1,124 +1,14 @@
 import { env } from "cloudflare:workers";
-
-const tables = [
-  `CREATE TABLE IF NOT EXISTS calls (id INTEGER PRIMARY KEY, company TEXT NOT NULL, niche TEXT NOT NULL, result TEXT NOT NULL, date TEXT NOT NULL)`,
-  `CREATE TABLE IF NOT EXISTS sales (id INTEGER PRIMARY KEY, company TEXT NOT NULL, type TEXT NOT NULL, value REAL NOT NULL DEFAULT 0, received REAL NOT NULL DEFAULT 0, date TEXT NOT NULL)`,
-  `CREATE TABLE IF NOT EXISTS leads (id INTEGER PRIMARY KEY, company TEXT NOT NULL, niche TEXT NOT NULL, status TEXT NOT NULL, potential REAL NOT NULL DEFAULT 0, next TEXT NOT NULL DEFAULT '')`,
-  `CREATE TABLE IF NOT EXISTS campaigns (id INTEGER PRIMARY KEY, title TEXT NOT NULL, start_date TEXT NOT NULL, total_days INTEGER NOT NULL, target REAL NOT NULL, active INTEGER NOT NULL DEFAULT 1)`,
-  `CREATE INDEX IF NOT EXISTS idx_calls_niche ON calls(niche)`,
-  `CREATE INDEX IF NOT EXISTS idx_leads_status ON leads(status)`,
+const tables=[
+ `CREATE TABLE IF NOT EXISTS calls (id INTEGER PRIMARY KEY, company TEXT NOT NULL, niche TEXT NOT NULL, result TEXT NOT NULL, date TEXT NOT NULL, device_id TEXT NOT NULL DEFAULT 'legacy')`,
+ `CREATE TABLE IF NOT EXISTS sales (id INTEGER PRIMARY KEY, company TEXT NOT NULL, type TEXT NOT NULL, value REAL NOT NULL DEFAULT 0, received REAL NOT NULL DEFAULT 0, date TEXT NOT NULL, device_id TEXT NOT NULL DEFAULT 'legacy')`,
+ `CREATE TABLE IF NOT EXISTS leads (id INTEGER PRIMARY KEY, company TEXT NOT NULL, niche TEXT NOT NULL, status TEXT NOT NULL, potential REAL NOT NULL DEFAULT 0, next TEXT NOT NULL DEFAULT '', device_id TEXT NOT NULL DEFAULT 'legacy')`,
+ `CREATE TABLE IF NOT EXISTS campaigns (id INTEGER PRIMARY KEY, title TEXT NOT NULL, start_date TEXT NOT NULL, total_days INTEGER NOT NULL, target REAL NOT NULL, active INTEGER NOT NULL DEFAULT 1, device_id TEXT NOT NULL DEFAULT 'legacy')`,
 ];
-
-async function ready() {
-  if (!env.DB) throw new Error("DB_UNAVAILABLE");
-  await env.DB.batch(tables.map((sql) => env.DB.prepare(sql)));
-}
-
-export async function GET() {
-  try {
-    await ready();
-    const [calls, sales, leads, campaignResult, campaignsResult] = await env.DB.batch([
-      env.DB.prepare("SELECT * FROM calls ORDER BY id DESC"),
-      env.DB.prepare("SELECT * FROM sales ORDER BY id DESC"),
-      env.DB.prepare("SELECT * FROM leads ORDER BY id DESC"),
-      env.DB.prepare(
-        "SELECT id,title,start_date AS startDate,total_days AS totalDays,target,active FROM campaigns WHERE active = 1 ORDER BY id DESC LIMIT 1",
-      ),
-      env.DB.prepare("SELECT id,title,start_date AS startDate,total_days AS totalDays,target,active FROM campaigns ORDER BY active DESC,id DESC"),
-    ]);
-    return Response.json({
-      calls: calls.results,
-      sales: sales.results,
-      leads: leads.results,
-      campaign: campaignResult.results[0] || null,
-      campaigns: campaignsResult.results,
-    });
-  } catch {
-    return Response.json(
-      { error: "Banco ainda não conectado" },
-      { status: 503 },
-    );
-  }
-}
-
-export async function POST(request: Request) {
-  try {
-    await ready();
-    const { kind, item } = (await request.json()) as {
-      kind: string;
-      item: Record<string, string | number | boolean>;
-    };
-    if (kind === "call")
-      await env.DB.prepare(
-        "INSERT INTO calls (id,company,niche,result,date) VALUES (?,?,?,?,?)",
-      )
-        .bind(item.id, item.company, item.niche, item.result, item.date)
-        .run();
-    else if (kind === "sale")
-      await env.DB.prepare(
-        "INSERT INTO sales (id,company,type,value,received,date) VALUES (?,?,?,?,?,?)",
-      )
-        .bind(
-          item.id,
-          item.company,
-          item.type,
-          item.value,
-          item.received,
-          item.date,
-        )
-        .run();
-    else if (kind === "lead")
-      await env.DB.prepare(
-        "INSERT INTO leads (id,company,niche,status,potential,next) VALUES (?,?,?,?,?,?)",
-      )
-        .bind(
-          item.id,
-          item.company,
-          item.niche,
-          item.status,
-          item.potential,
-          item.next,
-        )
-        .run();
-    else if (kind === "campaign") {
-      const active = item.active === false ? 0 : 1;
-      if (active) await env.DB.prepare("UPDATE campaigns SET active = 0").run();
-      await env.DB.prepare("INSERT INTO campaigns (id,title,start_date,total_days,target,active) VALUES (?,?,?,?,?,?)").bind(item.id,item.title,item.startDate,item.totalDays,item.target,active).run();
-    } else if (kind === "activateCampaign") {
-      await env.DB.batch([
-        env.DB.prepare("UPDATE campaigns SET active = 0"),
-        env.DB.prepare("UPDATE campaigns SET active = 1 WHERE id = ?").bind(item.id),
-      ]);
-    } else return Response.json({ error: "Tipo inválido" }, { status: 400 });
-    return Response.json({ ok: true });
-  } catch {
-    return Response.json({ error: "Não foi possível salvar" }, { status: 503 });
-  }
-}
-
-export async function DELETE(request: Request) {
-  try {
-    await ready();
-    const url = new URL(request.url);
-    const kind = url.searchParams.get("kind");
-    const id = Number(url.searchParams.get("id"));
-    if (!["call", "campaign"].includes(kind || "") || !Number.isSafeInteger(id))
-      return Response.json({ error: "Parâmetros inválidos" }, { status: 400 });
-    if (kind === "call") {
-      const result = await env.DB.prepare("DELETE FROM calls WHERE id = ?").bind(id).run();
-      if (!result.meta.changes) return Response.json({ error: "Registro não encontrado" }, { status: 404 });
-    } else {
-      const current = await env.DB.prepare("SELECT active FROM campaigns WHERE id = ?").bind(id).first<{active:number}>();
-      if (!current) return Response.json({ error: "Contagem não encontrada" }, { status: 404 });
-      await env.DB.prepare("DELETE FROM campaigns WHERE id = ?").bind(id).run();
-      if (current.active) await env.DB.prepare("UPDATE campaigns SET active = 1 WHERE id = (SELECT id FROM campaigns ORDER BY id DESC LIMIT 1)").run();
-    }
-    return Response.json({ ok: true });
-  } catch {
-    return Response.json(
-      { error: "Não foi possível remover" },
-      { status: 503 },
-    );
-  }
-}
+async function ready(){if(!env.DB)throw new Error("DB_UNAVAILABLE");await env.DB.batch(tables.map(sql=>env.DB.prepare(sql)));for(const table of ["calls","sales","leads","campaigns"]){const info=await env.DB.prepare(`PRAGMA table_info(${table})`).all<{name:string}>();if(!info.results.some(c=>c.name==="device_id"))await env.DB.prepare(`ALTER TABLE ${table} ADD COLUMN device_id TEXT NOT NULL DEFAULT 'legacy'`).run()}}
+function device(request:Request){const id=request.headers.get("x-device-id")||"";return /^[a-zA-Z0-9-]{8,80}$/.test(id)?id:"anonymous"}
+export async function GET(request:Request){try{await ready();const d=device(request);const [calls,sales,leads,active,campaigns]=await env.DB.batch([
+ env.DB.prepare("SELECT id,company,niche,result,date FROM calls WHERE device_id=? ORDER BY id DESC").bind(d),env.DB.prepare("SELECT id,company,type,value,received,date FROM sales WHERE device_id=? ORDER BY id DESC").bind(d),env.DB.prepare("SELECT id,company,niche,status,potential,next FROM leads WHERE device_id=? ORDER BY id DESC").bind(d),env.DB.prepare("SELECT id,title,start_date AS startDate,total_days AS totalDays,target,active FROM campaigns WHERE device_id=? AND active=1 ORDER BY id DESC LIMIT 1").bind(d),env.DB.prepare("SELECT id,title,start_date AS startDate,total_days AS totalDays,target,active FROM campaigns WHERE device_id=? ORDER BY active DESC,id DESC").bind(d),]);return Response.json({calls:calls.results,sales:sales.results,leads:leads.results,campaign:active.results[0]||null,campaigns:campaigns.results})}catch{return Response.json({error:"Banco ainda não conectado"},{status:503})}}
+export async function POST(request:Request){try{await ready();const d=device(request);const {kind,item}=await request.json() as {kind:string;item:Record<string,string|number|boolean>};if(kind==="call")await env.DB.prepare("INSERT INTO calls (id,company,niche,result,date,device_id) VALUES (?,?,?,?,?,?)").bind(item.id,item.company,item.niche,item.result,item.date,d).run();else if(kind==="sale")await env.DB.prepare("INSERT INTO sales (id,company,type,value,received,date,device_id) VALUES (?,?,?,?,?,?,?)").bind(item.id,item.company,item.type,item.value,item.received,item.date,d).run();else if(kind==="lead")await env.DB.prepare("INSERT INTO leads (id,company,niche,status,potential,next,device_id) VALUES (?,?,?,?,?,?,?)").bind(item.id,item.company,item.niche,item.status,item.potential,item.next,d).run();else if(kind==="campaign"){const active=item.active===false?0:1;if(active)await env.DB.prepare("UPDATE campaigns SET active=0 WHERE device_id=?").bind(d).run();await env.DB.prepare("INSERT INTO campaigns (id,title,start_date,total_days,target,active,device_id) VALUES (?,?,?,?,?,?,?)").bind(item.id,item.title,item.startDate,item.totalDays,item.target,active,d).run()}else if(kind==="activateCampaign"){await env.DB.batch([env.DB.prepare("UPDATE campaigns SET active=0 WHERE device_id=?").bind(d),env.DB.prepare("UPDATE campaigns SET active=1 WHERE id=? AND device_id=?").bind(item.id,d)])}else return Response.json({error:"Tipo inválido"},{status:400});return Response.json({ok:true})}catch{return Response.json({error:"Não foi possível salvar"},{status:503})}}
+export async function DELETE(request:Request){try{await ready();const d=device(request),url=new URL(request.url),kind=url.searchParams.get("kind"),id=Number(url.searchParams.get("id"));if(!["call","campaign"].includes(kind||"")||!Number.isSafeInteger(id))return Response.json({error:"Parâmetros inválidos"},{status:400});if(kind==="call"){const result=await env.DB.prepare("DELETE FROM calls WHERE id=? AND device_id=?").bind(id,d).run();if(!result.meta.changes)return Response.json({error:"Registro não encontrado"},{status:404})}else{const current=await env.DB.prepare("SELECT active FROM campaigns WHERE id=? AND device_id=?").bind(id,d).first<{active:number}>();if(!current)return Response.json({error:"Contagem não encontrada"},{status:404});await env.DB.prepare("DELETE FROM campaigns WHERE id=? AND device_id=?").bind(id,d).run();if(current.active)await env.DB.prepare("UPDATE campaigns SET active=1 WHERE id=(SELECT id FROM campaigns WHERE device_id=? ORDER BY id DESC LIMIT 1)").bind(d).run()}return Response.json({ok:true})}catch{return Response.json({error:"Não foi possível remover"},{status:503})}}
 
