@@ -120,6 +120,7 @@ export default function Home() {
   const [loaded, setLoaded] = useState(false);
   const [search, setSearch] = useState("");
   const [mobileMenu, setMobileMenu] = useState(false);
+  const [entered, setEntered] = useState(false);
   useEffect(() => {
     fetch("/api/data")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
@@ -198,6 +199,7 @@ export default function Home() {
     });
     if (!r.ok) throw new Error("Não foi possível criar a contagem");
     setCampaign(next);
+    setEntered(true);
     setView("Visão geral");
   };
   if (!loaded)
@@ -207,6 +209,7 @@ export default function Home() {
       </main>
     );
   if (!campaign) return <CountdownSetup create={createCampaign} />;
+  if (!entered) return <main className="campaign-entry"><div className="entry-shell"><div className="entry-brand"><span className="brand-mark">K</span><span>KRONOS<small>ESCOLHA SUA CONTAGEM</small></span></div><CampaignManager current={campaign} landing onEnter={()=>setEntered(true)}/></div></main>;
   return (
     <main className="app-shell">
       {mobileMenu?<button className="mobile-menu-backdrop" aria-label="Fechar menu" onClick={()=>setMobileMenu(false)}/>:null}
@@ -723,7 +726,7 @@ function Performance({ calls, sales }: { calls: Call[]; sales: Sale[] }) {
     </section>
   );
 }
-function CampaignManager({ current }: { current: Campaign }) {
+function CampaignManager({ current,landing=false,onEnter }: { current: Campaign;landing?:boolean;onEnter?:()=>void }) {
   const [items, setItems] = useState<Campaign[]>([]),
     [creating, setCreating] = useState(false),
     [title, setTitle] = useState("Nova contagem"),
@@ -779,9 +782,9 @@ function CampaignManager({ current }: { current: Campaign }) {
     <section className="campaign-page">
       <div className="campaign-heading">
         <div>
-          <span className="eyebrow">GERENCIAMENTO</span>
-          <h2>Suas contagens</h2>
-          <p>Crie outros ciclos sem interromper a contagem que está ativa.</p>
+          <span className="eyebrow">{landing?"INÍCIO":"GERENCIAMENTO"}</span>
+          <h2>{landing?"Escolha uma contagem":"Suas contagens"}</h2>
+          <p>{landing?"Abra uma contagem existente ou crie um novo ciclo.":"Crie outros ciclos sem interromper a contagem que está ativa."}</p>
         </div>
         <button
           className="primary standalone"
@@ -831,9 +834,9 @@ function CampaignManager({ current }: { current: Campaign }) {
                   <button onClick={() => activate(item.id)}>
                     Tornar ativa
                   </button>
-                ) : (
-                  <span>Em andamento</span>
-                )}
+                ) : landing ? (
+                  <button className="campaign-open" onClick={onEnter}>Abrir contagem</button>
+                ) : (<span>Em andamento</span>)}
                 <button
                   className="campaign-delete"
                   onClick={() => remove(item)}
