@@ -84,6 +84,7 @@ const money = (v: number) =>
     currency: "BRL",
     maximumFractionDigits: 0,
   });
+const apiFetch=(url:string,init:RequestInit={})=>{let id=localStorage.getItem("kronos-device-id");if(!id){id=crypto.randomUUID();localStorage.setItem("kronos-device-id",id)}return fetch(url,{...init,headers:{...(init.headers||{}),"x-device-id":id}})};
 const buildAIPlan = (target: number, days: number) => {
   const safeTarget = Math.max(1, target),
     safeDays = Math.max(1, days),
@@ -122,7 +123,7 @@ export default function Home() {
   const [mobileMenu, setMobileMenu] = useState(false);
   const [entered, setEntered] = useState(false);
   useEffect(() => {
-    fetch("/api/data")
+    apiFetch("/api/data")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d) => {
         setCalls(d.calls || []);
@@ -137,7 +138,7 @@ export default function Home() {
     kind: "call" | "sale" | "lead",
     item: Call | Sale | Lead,
   ) => {
-    const r = await fetch("/api/data", {
+    const r = await apiFetch("/api/data", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ kind, item }),
@@ -149,7 +150,7 @@ export default function Home() {
       !window.confirm("Remover esta ligação? Esta ação não pode ser desfeita.")
     )
       return;
-    const r = await fetch(`/api/data?kind=call&id=${id}`, { method: "DELETE" });
+    const r = await apiFetch(`/api/data?kind=call&id=${id}`, { method: "DELETE" });
     if (!r.ok) {
       window.alert("Não foi possível remover a ligação.");
       return;
@@ -192,7 +193,7 @@ export default function Home() {
     </button>
   );
   const createCampaign = async (next: Campaign) => {
-    const r = await fetch("/api/data", {
+    const r = await apiFetch("/api/data", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ kind: "campaign", item: next }),
@@ -734,7 +735,7 @@ function CampaignManager({ current,landing=false,onEnter }: { current: Campaign;
     [target, setTarget] = useState(100000),
     [busy, setBusy] = useState(false);
   const load = () =>
-    fetch("/api/data")
+    apiFetch("/api/data")
       .then((r) => r.json())
       .then((d) => setItems(d.campaigns || []));
   useEffect(() => {
@@ -751,7 +752,7 @@ function CampaignManager({ current,landing=false,onEnter }: { current: Campaign;
       target,
       active: false,
     };
-    const r = await fetch("/api/data", {
+    const r = await apiFetch("/api/data", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ kind: "campaign", item }),
@@ -762,7 +763,7 @@ function CampaignManager({ current,landing=false,onEnter }: { current: Campaign;
     await load();
   };
   const activate = async (id: number) => {
-    const r = await fetch("/api/data", {
+    const r = await apiFetch("/api/data", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ kind: "activateCampaign", item: { id } }),
@@ -771,7 +772,7 @@ function CampaignManager({ current,landing=false,onEnter }: { current: Campaign;
   };
   const remove = async (item: Campaign) => {
     if (!window.confirm(`Excluir a contagem “${item.title}”?`)) return;
-    const r = await fetch(`/api/data?kind=campaign&id=${item.id}`, {
+    const r = await apiFetch(`/api/data?kind=campaign&id=${item.id}`, {
       method: "DELETE",
     });
     if (!r.ok) return window.alert("Não foi possível excluir a contagem.");
@@ -1127,7 +1128,7 @@ function AIPlan({
 function SettingsView({ restart }: { restart: () => void }) {
   const [active, setActive] = useState<Campaign | null>(null);
   useEffect(() => {
-    fetch("/api/data")
+    apiFetch("/api/data")
       .then((r) => r.json())
       .then((d) => setActive(d.campaign || null))
       .catch(() => {});
