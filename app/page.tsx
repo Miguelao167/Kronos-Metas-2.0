@@ -33,18 +33,18 @@ const initialNiches = [
   ["Academias", 4],
   ["Outros negócios", 5],
 ] as const;
-const nicheOffer:Record<string,{category:string;price:number}>={
-  "Clínicas e dentistas":{category:"Site Premium",price:6000},
-  "Advogados e contadores":{category:"Site Profissional",price:3000},
-  "Construção e engenharia":{category:"Site Premium",price:6000},
-  "Imobiliárias":{category:"Site Premium",price:6000},
-  "Energia solar":{category:"Projeto High Ticket",price:10000},
-  "Transportes e logística":{category:"Site Profissional",price:3000},
-  "Automotivo":{category:"Site Profissional",price:3000},
-  "Beleza e estética":{category:"Site Express",price:1000},
-  "Restaurantes":{category:"Site Express",price:1000},
-  "Academias":{category:"Site Profissional",price:3000},
-  "Outros negócios":{category:"Site Express",price:1000},
+const nicheOffer: Record<string, { category: string; price: number }> = {
+  "Clínicas e dentistas": { category: "Site Premium", price: 6000 },
+  "Advogados e contadores": { category: "Site Profissional", price: 3000 },
+  "Construção e engenharia": { category: "Site Premium", price: 6000 },
+  Imobiliárias: { category: "Site Premium", price: 6000 },
+  "Energia solar": { category: "Projeto High Ticket", price: 10000 },
+  "Transportes e logística": { category: "Site Profissional", price: 3000 },
+  Automotivo: { category: "Site Profissional", price: 3000 },
+  "Beleza e estética": { category: "Site Express", price: 1000 },
+  Restaurantes: { category: "Site Express", price: 1000 },
+  Academias: { category: "Site Profissional", price: 3000 },
+  "Outros negócios": { category: "Site Express", price: 1000 },
 };
 type Call = {
   id: number;
@@ -736,41 +736,334 @@ function Performance({ calls, sales }: { calls: Call[]; sales: Sale[] }) {
     </section>
   );
 }
-function CampaignManager({current}:{current:Campaign}){
-  const [items,setItems]=useState<Campaign[]>([]),[creating,setCreating]=useState(false),[title,setTitle]=useState("Nova contagem"),[days,setDays]=useState(30),[target,setTarget]=useState(100000),[busy,setBusy]=useState(false);
-  const load=()=>fetch('/api/data').then(r=>r.json()).then(d=>setItems(d.campaigns||[]));
-  useEffect(()=>{load().catch(()=>{})},[]);
-  const create=async(e:React.FormEvent)=>{e.preventDefault();setBusy(true);const item={id:Date.now(),title,startDate:new Date().toISOString().slice(0,10),totalDays:days,target,active:false};const r=await fetch('/api/data',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({kind:'campaign',item})});setBusy(false);if(!r.ok)return window.alert('Não foi possível criar a contagem.');setCreating(false);await load()};
-  const activate=async(id:number)=>{const r=await fetch('/api/data',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({kind:'activateCampaign',item:{id}})});if(r.ok)window.location.reload()};
-  const remove=async(item:Campaign)=>{if(!window.confirm(`Excluir a contagem “${item.title}”?`))return;const r=await fetch(`/api/data?kind=campaign&id=${item.id}`,{method:'DELETE'});if(!r.ok)return window.alert('Não foi possível excluir a contagem.');if(item.id===current.id)window.location.reload();else await load()};
-  return <section className="campaign-page"><div className="campaign-heading"><div><span className="eyebrow">GERENCIAMENTO</span><h2>Suas contagens</h2><p>Crie outros ciclos sem interromper a contagem que está ativa.</p></div><button className="primary standalone" onClick={()=>setCreating(true)}><Plus/> Nova contagem</button></div><div className="campaign-list">{items.map(item=>{const isActive=Boolean(item.active);const elapsed=Math.max(1,Math.min(item.totalDays,Math.floor((Date.now()-new Date(`${item.startDate}T00:00:00`).getTime())/86400000)+1));return <article className={`campaign-item ${isActive?'active':''}`} key={item.id}><div className="campaign-status">{isActive?'ATIVA':'SECUNDÁRIA'}</div><div className="campaign-main"><h3>{item.title}</h3><span>Dia {elapsed} de {item.totalDays} · início {new Date(`${item.startDate}T12:00:00`).toLocaleDateString('pt-BR')}</span></div><div className="campaign-target"><small>META</small><b>{money(item.target)}</b></div><div className="campaign-actions">{!isActive?<button onClick={()=>activate(item.id)}>Tornar ativa</button>:<span>Em andamento</span>}<button className="campaign-delete" onClick={()=>remove(item)}><Trash2/> Excluir</button></div></article>})}</div>{creating?<div className="modal-backdrop" onMouseDown={e=>e.target===e.currentTarget&&setCreating(false)}><form className="modal" onSubmit={create}><div className="modal-title"><div><span className="eyebrow">CONTAGEM SECUNDÁRIA</span><h2>Criar nova contagem</h2></div><button type="button" onClick={()=>setCreating(false)}><X/></button></div><label>Nome<input value={title} onChange={e=>setTitle(e.target.value)} required/></label><label>Duração em dias<input type="number" min="1" max="365" value={days} onChange={e=>setDays(+e.target.value)} required/></label><label>Meta de faturamento<input type="number" min="1" value={target} onChange={e=>setTarget(+e.target.value)} required/></label><p className="secondary-note">Ela será criada como secundária. Sua contagem atual continuará ativa.</p><button className="submit" disabled={busy}>{busy?'Criando...':'Criar contagem secundária'}</button></form></div>:null}</section>
+function CampaignManager({ current }: { current: Campaign }) {
+  const [items, setItems] = useState<Campaign[]>([]),
+    [creating, setCreating] = useState(false),
+    [title, setTitle] = useState("Nova contagem"),
+    [days, setDays] = useState(30),
+    [target, setTarget] = useState(100000),
+    [busy, setBusy] = useState(false);
+  const load = () =>
+    fetch("/api/data")
+      .then((r) => r.json())
+      .then((d) => setItems(d.campaigns || []));
+  useEffect(() => {
+    load().catch(() => {});
+  }, []);
+  const create = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    const item = {
+      id: Date.now(),
+      title,
+      startDate: new Date().toISOString().slice(0, 10),
+      totalDays: days,
+      target,
+      active: false,
+    };
+    const r = await fetch("/api/data", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ kind: "campaign", item }),
+    });
+    setBusy(false);
+    if (!r.ok) return window.alert("Não foi possível criar a contagem.");
+    setCreating(false);
+    await load();
+  };
+  const activate = async (id: number) => {
+    const r = await fetch("/api/data", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ kind: "activateCampaign", item: { id } }),
+    });
+    if (r.ok) window.location.reload();
+  };
+  const remove = async (item: Campaign) => {
+    if (!window.confirm(`Excluir a contagem “${item.title}”?`)) return;
+    const r = await fetch(`/api/data?kind=campaign&id=${item.id}`, {
+      method: "DELETE",
+    });
+    if (!r.ok) return window.alert("Não foi possível excluir a contagem.");
+    if (item.id === current.id) window.location.reload();
+    else await load();
+  };
+  return (
+    <section className="campaign-page">
+      <div className="campaign-heading">
+        <div>
+          <span className="eyebrow">GERENCIAMENTO</span>
+          <h2>Suas contagens</h2>
+          <p>Crie outros ciclos sem interromper a contagem que está ativa.</p>
+        </div>
+        <button
+          className="primary standalone"
+          onClick={() => setCreating(true)}
+        >
+          <Plus /> Nova contagem
+        </button>
+      </div>
+      <div className="campaign-list">
+        {items.map((item) => {
+          const isActive = Boolean(item.active);
+          const elapsed = Math.max(
+            1,
+            Math.min(
+              item.totalDays,
+              Math.floor(
+                (Date.now() -
+                  new Date(`${item.startDate}T00:00:00`).getTime()) /
+                  86400000,
+              ) + 1,
+            ),
+          );
+          const progress = Math.round((elapsed / item.totalDays) * 100);
+          return (
+            <article
+              className={`campaign-item ${isActive ? "active" : ""}`}
+              key={item.id}
+            >
+              <div className="campaign-card-top">
+                <div className="campaign-status">
+                  {isActive ? "● CONTAGEM ATIVA" : "CONTAGEM SECUNDÁRIA"}
+                </div>
+                <span>{progress}% do período</span>
+              </div>
+              <div className="campaign-main">
+                <h3>{item.title}</h3>
+                <span>Iniciada em {new Date(`${item.startDate}T12:00:00`).toLocaleDateString("pt-BR")}</span>
+              </div>
+              <div className="campaign-day"><div><small>DIA ATUAL</small><b>{elapsed}</b></div><span>de {item.totalDays} dias</span></div>
+              <div className="campaign-period-bar"><i style={{width:`${progress}%`}} /></div>
+              <div className="campaign-target">
+                <small>META DE FATURAMENTO</small>
+                <b>{money(item.target)}</b>
+              </div>
+              <div className="campaign-actions">
+                {!isActive ? (
+                  <button onClick={() => activate(item.id)}>
+                    Tornar ativa
+                  </button>
+                ) : (
+                  <span>Em andamento</span>
+                )}
+                <button
+                  className="campaign-delete"
+                  onClick={() => remove(item)}
+                >
+                  <Trash2 /> Excluir
+                </button>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+      {creating ? (
+        <div
+          className="modal-backdrop"
+          onMouseDown={(e) =>
+            e.target === e.currentTarget && setCreating(false)
+          }
+        >
+          <form className="modal" onSubmit={create}>
+            <div className="modal-title">
+              <div>
+                <span className="eyebrow">CONTAGEM SECUNDÁRIA</span>
+                <h2>Criar nova contagem</h2>
+              </div>
+              <button type="button" onClick={() => setCreating(false)}>
+                <X />
+              </button>
+            </div>
+            <label>
+              Nome
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                required
+              />
+            </label>
+            <label>
+              Duração em dias
+              <input
+                type="number"
+                min="1"
+                max="365"
+                value={days}
+                onChange={(e) => setDays(+e.target.value)}
+                required
+              />
+            </label>
+            <label>
+              Meta de faturamento
+              <input
+                type="number"
+                min="1"
+                value={target}
+                onChange={(e) => setTarget(+e.target.value)}
+                required
+              />
+            </label>
+            <p className="secondary-note">
+              Ela será criada como secundária. Sua contagem atual continuará
+              ativa.
+            </p>
+            <button className="submit" disabled={busy}>
+              {busy ? "Criando..." : "Criar contagem secundária"}
+            </button>
+          </form>
+        </div>
+      ) : null}
+    </section>
+  );
 }
 
-function TodoPlan({campaign,calls,sales}:{campaign:Campaign;calls:Call[];sales:Sale[]}) {
-  const plan=buildAIPlan(campaign.target,campaign.totalDays);
-  const callsLeft=Math.max(0,plan.prospects-calls.length);
-  const revenue=sales.reduce((total,sale)=>total+Math.max(0,sale.value),0);
-  const revenueLeft=Math.max(0,campaign.target-revenue);
-  const completedByType=(type:string)=>sales.filter(s=>s.type===type).length;
-  const totalSites=plan.mix.reduce((total,item)=>total+item[2],0);
-  const completedSites=sales.length;
-  return <section className="todo-page">
-    <div className="todo-hero">
-      <div><span className="ai-badge"><ClipboardList/> PLANO DE EXECUÇÃO</span><h2>O que fazer nesta contagem</h2><p>A lista abaixo é calculada para alcançar {money(campaign.target)} em {campaign.totalDays} dias.</p></div>
-      <div className="todo-progress"><small>FATURAMENTO RESTANTE</small><b>{money(revenueLeft)}</b><span>{Math.min(100,Math.round(revenue/campaign.target*100))}% concluído</span></div>
-    </div>
-    <div className="todo-summary">
-      <article><small>LIGAÇÕES DO CICLO</small><b>{plan.prospects.toLocaleString('pt-BR')}</b><span>{calls.length} feitas · {callsLeft.toLocaleString('pt-BR')} restantes</span></article>
-      <article><small>LIGAÇÕES POR DIA</small><b>{plan.callsPerDay}</b><span>Ritmo recomendado</span></article>
-      <article><small>SITES PARA VENDER</small><b>{totalSites}</b><span>{completedSites} vendidos · {Math.max(0,totalSites-completedSites)} restantes</span></article>
-      <article><small>META POR DIA</small><b>{money(plan.daily)}</b><span>Faturamento necessário</span></article>
-    </div>
-    <div className="todo-grid">
-      <section className="todo-card"><div className="todo-card-head"><div><span className="eyebrow">VENDAS NECESSÁRIAS</span><h3>Sites por categoria</h3></div><span>Preço unitário</span></div>{plan.mix.map(([name,price,total])=>{const done=completedByType(name),left=Math.max(0,total-done);return <div className="product-task" key={name}><div className={left===0?'task-check done':'task-check'}>{left===0?'✓':done}</div><div><b>{name}</b><small>{done} vendidos · {left} restantes de {total}</small><div className="task-bar"><i style={{width:`${Math.min(100,done/total*100)}%`}}/></div></div><strong>{money(price)}</strong></div>})}</section>
-      <section className="todo-card"><div className="todo-card-head"><div><span className="eyebrow">PROSPECÇÃO</span><h3>Ligações por nicho</h3></div><span>{callsLeft.toLocaleString('pt-BR')} restantes</span></div>{initialNiches.map(([name,weight])=>{const target=Math.ceil(plan.prospects*weight/80),done=calls.filter(c=>c.niche===name).length,offer=nicheOffer[name];return <div className="call-task" key={name}><div className="niche-offer"><span>{name}</span><em>{offer.category} · {money(offer.price)}</em></div><div className="task-bar"><i style={{width:`${Math.min(100,done/target*100)}%`}}/></div><b>{done} / {target}</b></div>})}</section>
-    </div>
-    <p className="todo-footnote">O plano usa conversão estimada de 1,2% e ticket médio de R$ 3.000. Os números concluídos são atualizados pelos registros de ligações e vendas.</p>
-  </section>
+function TodoPlan({
+  campaign,
+  calls,
+  sales,
+}: {
+  campaign: Campaign;
+  calls: Call[];
+  sales: Sale[];
+}) {
+  const plan = buildAIPlan(campaign.target, campaign.totalDays);
+  const callsLeft = Math.max(0, plan.prospects - calls.length);
+  const revenue = sales.reduce(
+    (total, sale) => total + Math.max(0, sale.value),
+    0,
+  );
+  const revenueLeft = Math.max(0, campaign.target - revenue);
+  const completedByType = (type: string) =>
+    sales.filter((s) => s.type === type).length;
+  const totalSites = plan.mix.reduce((total, item) => total + item[2], 0);
+  const completedSites = sales.length;
+  return (
+    <section className="todo-page">
+      <div className="todo-hero">
+        <div>
+          <span className="ai-badge">
+            <ClipboardList /> PLANO DE EXECUÇÃO
+          </span>
+          <h2>O que fazer nesta contagem</h2>
+          <p>
+            A lista abaixo é calculada para alcançar {money(campaign.target)} em{" "}
+            {campaign.totalDays} dias.
+          </p>
+        </div>
+        <div className="todo-progress">
+          <small>FATURAMENTO RESTANTE</small>
+          <b>{money(revenueLeft)}</b>
+          <span>
+            {Math.min(100, Math.round((revenue / campaign.target) * 100))}%
+            concluído
+          </span>
+        </div>
+      </div>
+      <div className="todo-summary">
+        <article>
+          <small>LIGAÇÕES DO CICLO</small>
+          <b>{plan.prospects.toLocaleString("pt-BR")}</b>
+          <span>
+            {calls.length} feitas · {callsLeft.toLocaleString("pt-BR")}{" "}
+            restantes
+          </span>
+        </article>
+        <article>
+          <small>LIGAÇÕES POR DIA</small>
+          <b>{plan.callsPerDay}</b>
+          <span>Ritmo recomendado</span>
+        </article>
+        <article>
+          <small>SITES PARA VENDER</small>
+          <b>{totalSites}</b>
+          <span>
+            {completedSites} vendidos ·{" "}
+            {Math.max(0, totalSites - completedSites)} restantes
+          </span>
+        </article>
+        <article>
+          <small>META POR DIA</small>
+          <b>{money(plan.daily)}</b>
+          <span>Faturamento necessário</span>
+        </article>
+      </div>
+      <div className="todo-grid">
+        <section className="todo-card">
+          <div className="todo-card-head">
+            <div>
+              <span className="eyebrow">VENDAS NECESSÁRIAS</span>
+              <h3>Sites por categoria</h3>
+            </div>
+            <span>Preço unitário</span>
+          </div>
+          {plan.mix.map(([name, price, total]) => {
+            const done = completedByType(name),
+              left = Math.max(0, total - done);
+            return (
+              <div className="product-task" key={name}>
+                <div className={left === 0 ? "task-check done" : "task-check"}>
+                  {left === 0 ? "✓" : done}
+                </div>
+                <div>
+                  <b>{name}</b>
+                  <small>
+                    {done} vendidos · {left} restantes de {total}
+                  </small>
+                  <div className="task-bar">
+                    <i
+                      style={{
+                        width: `${Math.min(100, (done / total) * 100)}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+                <strong>{money(price)}</strong>
+              </div>
+            );
+          })}
+        </section>
+        <section className="todo-card">
+          <div className="todo-card-head">
+            <div>
+              <span className="eyebrow">PROSPECÇÃO</span>
+              <h3>Ligações por nicho</h3>
+            </div>
+            <span>{callsLeft.toLocaleString("pt-BR")} restantes</span>
+          </div>
+          {initialNiches.map(([name, weight]) => {
+            const target = Math.ceil((plan.prospects * weight) / 80),
+              done = calls.filter((c) => c.niche === name).length,
+              offer = nicheOffer[name];
+            return (
+              <div className="call-task" key={name}>
+                <div className="niche-offer">
+                  <span>{name}</span>
+                  <em>
+                    {offer.category} · {money(offer.price)}
+                  </em>
+                </div>
+                <div className="task-bar">
+                  <i
+                    style={{
+                      width: `${Math.min(100, (done / target) * 100)}%`,
+                    }}
+                  />
+                </div>
+                <b>
+                  {done} / {target}
+                </b>
+              </div>
+            );
+          })}
+        </section>
+      </div>
+      <p className="todo-footnote">
+        O plano usa conversão estimada de 1,2% e ticket médio de R$ 3.000. Os
+        números concluídos são atualizados pelos registros de ligações e vendas.
+      </p>
+    </section>
+  );
 }
 
 function AIPlan({
