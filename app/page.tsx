@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import {
   BarChart3,
   Bell,
+  Building2,
   CalendarDays,
   ChevronRight,
   CircleDollarSign,
@@ -47,6 +48,13 @@ const nicheOffer: Record<string, { category: string; price: number }> = {
   Academias: { category: "Site Profissional", price: 3000 },
   "Outros negócios": { category: "Site Express", price: 1000 },
 };
+type ProspectCompany={name:string;city:string;phone:string;category:"Site Express"|"Site Profissional"|"Site Premium"|"Projeto High Ticket";price:number};
+const prospectCompanies:ProspectCompany[]=[
+ {name:"Nani Restaurante",city:"Uberlândia",phone:"(34) 3235-1214",category:"Site Express",price:1000},{name:"Augusto Produtos Alimentícios",city:"Uberlândia",phone:"(34) 98880-4808",category:"Site Express",price:1000},{name:"Restaurante Paranaíba",city:"Uberlândia",phone:"(34) 98425-1981",category:"Site Express",price:1000},{name:"Marcelino Self Service Buffet",city:"Uberlândia",phone:"(34) 3236-8241",category:"Site Express",price:1000},{name:"De Jesus Restaurante",city:"Uberlândia",phone:"(34) 99157-8538",category:"Site Express",price:1000},{name:"Dom Alves Pizzaria",city:"Uberlândia",phone:"(34) 99160-4174",category:"Site Express",price:1000},{name:"Mais Assados",city:"Uberlândia",phone:"(34) 99856-1881",category:"Site Express",price:1000},{name:"Restaurante Point Mineiro",city:"Uberlândia",phone:"(34) 98411-5200",category:"Site Express",price:1000},{name:"Mangue Sabores Naturais",city:"Uberlândia",phone:"(34) 3221-0300",category:"Site Express",price:1000},{name:"Recanto do Churrasco",city:"Uberlândia",phone:"(34) 99805-3134",category:"Site Express",price:1000},{name:"LJA Restaurante & Self Service",city:"Uberlândia",phone:"(34) 99694-1038",category:"Site Express",price:1000},{name:"Morais Refeições",city:"Uberlândia",phone:"(34) 99979-6678",category:"Site Express",price:1000},{name:"Restaurante e Marmitaria Dona Nenê",city:"Uberlândia",phone:"(34) 99996-4145",category:"Site Express",price:1000},{name:"Studio Stik Fitness",city:"Uberaba",phone:"(34) 99647-5511",category:"Site Express",price:1000},{name:"Keylla Costa Academia",city:"Uberaba",phone:"(34) 98852-7349",category:"Site Express",price:1000},{name:"Única Pilates Fitness e Saúde",city:"Uberaba",phone:"(34) 99191-4636",category:"Site Express",price:1000},{name:"FP Exclusive Training",city:"Uberaba",phone:"(34) 99151-2163",category:"Site Express",price:1000},{name:"Performance Academia",city:"Uberaba",phone:"(34) 99813-1911",category:"Site Express",price:1000},{name:"Studio Premium Academia",city:"Uberaba",phone:"(34) 99978-5384",category:"Site Express",price:1000},{name:"Albacross Centro de Treinamento",city:"Uberaba",phone:"(34) 99652-4939",category:"Site Express",price:1000},
+ {name:"Discovery Auto Center",city:"Uberlândia",phone:"(34) 98883-4643",category:"Site Profissional",price:3000},{name:"Retífica Real",city:"Uberlândia",phone:"(34) 3227-1818",category:"Site Profissional",price:3000},{name:"Turbo Service Uberlândia",city:"Uberlândia",phone:"(34) 99183-9016",category:"Site Profissional",price:3000},{name:"Auto Center Injetcar",city:"Uberlândia",phone:"(34) 3255-9738",category:"Site Profissional",price:3000},{name:"GS Auto Center",city:"Uberlândia",phone:"(34) 99193-4888",category:"Site Profissional",price:3000},{name:"Opções Truck Móvel",city:"Uberlândia",phone:"(34) 3222-6808",category:"Site Profissional",price:3000},{name:"Auto Center Luciano",city:"Uberlândia",phone:"(34) 3210-2828",category:"Site Profissional",price:3000},{name:"Udi Center Reparos Automotivos",city:"Uberlândia",phone:"(34) 98811-0230",category:"Site Profissional",price:3000},{name:"Juninho Auto Center",city:"Uberlândia",phone:"(34) 3215-4419",category:"Site Profissional",price:3000},{name:"Dominus Auto Center",city:"Uberlândia",phone:"(34) 3222-3901",category:"Site Profissional",price:3000},
+ {name:"DMC Construtora",city:"Patos de Minas",phone:"(34) 3822-2607",category:"Site Premium",price:6000},{name:"WCT Construtora",city:"Patos de Minas",phone:"(34) 3823-7105",category:"Site Premium",price:6000},{name:"Construtora Guimarães",city:"Patos de Minas",phone:"(34) 99124-5515",category:"Site Premium",price:6000},{name:"INOVA Construtora",city:"Patos de Minas",phone:"(34) 99677-7568",category:"Site Premium",price:6000},{name:"RLJ Construtora",city:"Patos de Minas",phone:"(34) 99669-9399",category:"Site Premium",price:6000},
+ {name:"Gordon Energia Solar",city:"Araguari",phone:"(34) 99215-0149",category:"Projeto High Ticket",price:10000},{name:"Ecolight Engenharia",city:"Araguari",phone:"(34) 99715-7087",category:"Projeto High Ticket",price:10000},
+];
 type Call = {
   id: number;
   company: string;
@@ -227,6 +235,7 @@ export default function Home() {
           {nav("Visão geral", <LayoutDashboard />)}
           {nav("Hoje", <Gauge />)}
           {nav("O que fazer", <ClipboardList />)}
+          {nav("Empresas para ligar", <Building2 />)}
           {nav("Contagens", <Layers3 />)}
           <p>EXECUÇÃO</p>
           {nav("Ligações", <Phone />)}
@@ -429,6 +438,8 @@ export default function Home() {
           </>
         ) : view === "O que fazer" ? (
           <TodoPlan campaign={campaign} calls={calls} sales={sales} />
+        ) : view === "Empresas para ligar" ? (
+          <ProspectList calls={calls} action={()=>setModal("call")}/>
         ) : view === "Contagens" ? (
           <CampaignManager current={campaign} />
         ) : view === "Ligações" ? (
@@ -727,6 +738,8 @@ function Performance({ calls, sales }: { calls: Call[]; sales: Sale[] }) {
     </section>
   );
 }
+function ProspectList({calls,action}:{calls:Call[];action:()=>void}){const groups=["Site Express","Site Profissional","Site Premium","Projeto High Ticket"] as const;return <section className="prospect-page"><div className="prospect-heading"><div><span className="eyebrow">PROSPECÇÃO DDD 34</span><h2>Empresas para ligar</h2><p>Lista inicial de empresas cujo site próprio não foi localizado na triagem pública. Confirme a necessidade durante a ligação.</p></div><div><small>TOTAL</small><b>{prospectCompanies.length} empresas</b></div></div>{groups.map(category=>{const rows=prospectCompanies.filter(c=>c.category===category),done=rows.filter(c=>calls.some(call=>call.company.toLowerCase()===c.name.toLowerCase())).length;return <section className="prospect-group" key={category}><div className="prospect-group-head"><div><span>{category}</span><h3>{rows.length} empresas · a partir de {money(rows[0].price)}</h3></div><b>{done} / {rows.length} ligadas</b></div><div className="prospect-rows">{rows.map((company,index)=>{const called=calls.some(call=>call.company.toLowerCase()===company.name.toLowerCase());return <div className={`prospect-row ${called?'called':''}`} key={company.name}><span className="prospect-number">{String(index+1).padStart(2,'0')}</span><div className="prospect-company"><b>{company.name}</b><small>{company.city} · site não localizado</small></div><a href={`tel:${company.phone.replace(/\D/g,'')}`}>{company.phone}</a><div className="prospect-line"><i style={{width:called?'100%':'0%'}}/></div><button onClick={action}>{called?'Ligação registrada':'Registrar ligação'}</button></div>})}</div></section>})}<p className="prospect-note">Fontes da triagem: diretórios públicos Solutudo, Cylex e Guia Patos de Minas. Telefones e situação digital devem ser confirmados antes da abordagem comercial.</p></section>}
+
 function CampaignManager({ current,landing=false,onEnter }: { current: Campaign;landing?:boolean;onEnter?:()=>void }) {
   const [items, setItems] = useState<Campaign[]>([]),
     [creating, setCreating] = useState(false),
